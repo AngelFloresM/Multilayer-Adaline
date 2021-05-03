@@ -1,11 +1,9 @@
 from tkinter import *
-from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from numpy.core.numeric import extend_all
-from Adaline import Adaline
-from Helpers import *
+from Functions import *
 
 # funcion contorno
 
@@ -14,28 +12,23 @@ class Window:
     def __init__(self, window):
         self.window = window
         self.window.title("Práctica 4")
-        self.window.geometry("800x500")
+        self.window.geometry("750x500")
 
         # Values Init
         self.points = []
         self.pointsOutputs = []
-        # self.points = np.array(self.adalineExamples[0]['inputs'])
-        # self.pointsOutputs = np.array(self.adalineExamples[0]['outputs'])
-        # self.classesInExample = self.adalineExamples[0]['classes']
-
-        self.hiddenLayerWeights = np.zeros((0, 3))
-        self.hiddenLayerOutputs = None
-        self.outputLayerWeights = np.zeros(0)
-        self.outputLayerOutput = 0
+        self.hiddenWeights = np.zeros((0, 3))
+        self.hiddenOutputs = None
+        self.outputWeights = np.zeros(0)
+        self.outputOutput = 0
         self.epoch = 0
 
         # Entries
-        self.entryLabels = ['Neurons: ', 'Epochs: ',
-                            'Learning Rate: ', 'Example: ']
-        self.entries = []
+        self.entryLabels = ["Neurons: ", "Epochs: ", "Learning Rate: ", "Example: "]
+        self.entries: Entry = []
 
         # Buttons
-        self.initBtn: Button
+        self.loadBtn: Button
         self.startBtn: Button
         self.cleanBtn: Button
 
@@ -59,9 +52,10 @@ class Window:
         upperFrame.grid(row=0, column=0)
 
         for i in range(len(self.entryLabels)):
-            Label(upperFrame, text=self.entryLabels[i]).grid(
-                row=i, column=0, sticky=E)
-            self.entries.append(Entry(upperFrame, width=6))
+            Label(master=upperFrame, text=self.entryLabels[i]).grid(
+                row=i, column=0, sticky=E
+            )
+            self.entries.append(Entry(master=upperFrame, width=6))
             self.entries[i].grid(row=i, column=1, sticky=W)
 
         Label(upperFrame, text="", width=12).grid(row=5, column=0)
@@ -69,19 +63,22 @@ class Window:
         middleFrame = Frame(actionFrame)
         middleFrame.grid(row=1, column=0)
 
-        self.initBtn = Button(middleFrame, text="Load Example",
-                              command=self.load_example, width=15)
-        self.initBtn.grid(row=0, column=0)
+        self.loadBtn = Button(
+            master=middleFrame, text="Load Example", command=self.load_example, width=15
+        )
+        self.loadBtn.grid(row=0, column=0)
 
-        self.startBtn = Button(middleFrame, text="Start",
-                               command=self.start, width=15)
+        self.startBtn = Button(
+            master=middleFrame, text="Start", command=self.start, width=15
+        )
         self.startBtn.grid(row=1, column=0)
 
-        self.cleanBtn = Button(middleFrame, text="Clean",
-                               command=self.clean, width=15)
+        self.cleanBtn = Button(
+            master=middleFrame, text="Clean", command=self.clean, width=15
+        )
         self.cleanBtn.grid(row=2, column=0)
 
-        Label(middleFrame, text="", width=12).grid(row=4, column=0)
+        Label(master=middleFrame, text="", width=12).grid(row=4, column=0)
 
         lowerFrame = Frame(actionFrame)
         lowerFrame.grid(row=2, column=0)
@@ -104,31 +101,23 @@ class Window:
         self.graph.set_xlim([self.graphLimits[0], self.graphLimits[1]])
         self.graph.set_ylim([self.graphLimits[0], self.graphLimits[1]])
         # Draw origin lines
-        self.graph.axhline(y=0, color='k')
-        self.graph.axvline(x=0, color='k')
+        self.graph.axhline(y=0, color="k")
+        self.graph.axvline(x=0, color="k")
 
     def start(self):
-        self.hiddenLayerWeights = np.zeros((0, 3))
-        self.hiddenLayerOutputs = np.zeros(int(self.entries[0].get()) + 1)
-        self.outputLayerWeights = np.zeros(0)
-        self.hiddenLayerOutputs[0] = 1
-        if self.entries[1].get() == '':
+        neurons = int(self.entries[0].get())
+        totalEpochs = int(self.entries[1].get())
+
+        self.hiddenWeights = createWeights(neurons, True)
+        self.hiddenOutputs = np.zeros(neurons + 1)
+        self.outputWeights = createWeights(neurons, False)
+        self.hiddenOutputs[0] = 1
+
+        if self.entries[1].get() == "":
             self.epoch = 100
         else:
-            self.epoch = int(self.entries[1].get())
+            self.epoch = totalEpochs
         epoch = 0
-
-        for _ in range(int(self.entries[0].get())):
-            self.hiddenLayerWeights = np.append(
-                self.hiddenLayerWeights,
-                [self.createNeuron()],
-                axis=0)
-
-        for i in range(len(self.hiddenLayerOutputs)):        
-            self.outputLayerWeights = np.append(
-                self.outputLayerWeights,
-                np.random.uniform(-1, 1)
-                )
 
         while epoch <= 1:
             self.window.update()
@@ -136,26 +125,14 @@ class Window:
             # self.configGraph()
 
             for i in range(len(self.points)):
-                for j in range(1, len(self.hiddenLayerWeights)):
-                    self.hiddenLayerOutputs[j] = train(
-                        self.hiddenLayerWeights[j - 1],
-                        self.points[i - 1]
-                    )
-                self.outputLayerOutput = train(
-                    self.outputLayerWeights,
-                    self.hiddenLayerOutputs
+                self.outputOutput = feedForward(
+                    hiddenWeights=hiddenWeights[j], 
+                    outputWeights=outputWeights, 
+                    point=self.points[i]
                 )
 
-            # self.MSELabel.config(text=mse)
-
-            # for i in range(len(self.points)):
-            #     self.plot(self.points[i][1],
-            #               self.points[i][2], self.pointsOutputs[i])
-
-            # self.MSELabel.config(text=self.neurons.meanError)
-            self.canvas.draw()
-            epoch += 1
-        
+        #     self.canvas.draw()
+        #     epoch += 1
 
     def clean(self):
         self.points = []
@@ -169,7 +146,7 @@ class Window:
     def load_example(self):
         example = int(self.entries[3].get())
 
-        if example == 0 or example == '':
+        if example == 0 or example == "":
             return
 
         self.clean()
@@ -182,12 +159,6 @@ class Window:
             self.plot(inputs[i][1], inputs[i][2], outputs[i])
 
         self.canvas.draw()
-
-    def createNeuron(self):
-        w = []
-        for _ in range(3):
-            w.append(np.random.uniform(-1, 1))
-        return w
 
     def plot(self, x, y, desire):
         color = pointColor(desire)

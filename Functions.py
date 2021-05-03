@@ -3,9 +3,13 @@ import csv
 import math
 import random
 
+
 def pointColor(output):
-    if(output == 0): return "darkorange"
-    if(output == 1): return "seagreen"
+    if output == 0:
+        return "darkorange"
+    if output == 1:
+        return "seagreen"
+
 
 def load_inputs(example):
     x = []
@@ -20,6 +24,7 @@ def load_inputs(example):
             line_count += 1
     return x, y
 
+
 def load_outputs(example):
     outputs = []
     with open(f"./examples/{example}/outputs.csv") as csv_file:
@@ -31,6 +36,7 @@ def load_outputs(example):
             line_count += 1
     return outputs
 
+
 def load_from_file(example):
     inputs = []
     outputs = []
@@ -38,23 +44,25 @@ def load_from_file(example):
         csv_reader = csv.DictReader(csv_file)
         line_count = 0
         for row in csv_reader:
-            single_input = []
-            single_input.append(float(row['x0']))
-            single_input.append(float(row['x1']))
-            single_input.append(float(row['x2']))
-            outputs.append(int(row['d1']))
-            inputs.append(single_input)
+            inputs.append([float(row["x0"]), float(row["x1"]), float(row["x2"])])
+            outputs.append(int(row["d1"]))
             line_count += 1
 
     return inputs, outputs
 
-def crate_neuron_weights(inputs):
+
+def createWeights(neurons, hidden):
     w = []
-    for i in range(inputs):
+    if hidden == True:
+        for i in range(neurons):
+            w.append([random.random(), random.random(), random.random()])
+        return np.array(w)
+    for i in range(neurons + 1):
         w.append(random.random())
     return np.array(w)
 
-def train(w, inputs: list):
+
+def train(weights, inputs):
     y = sigmoid(np.dot(w.T, inputs))
     return y
     # sigmoid = sigmoid(y, True)
@@ -63,12 +71,33 @@ def train(w, inputs: list):
     #     w += sigmoid * lr  * error * inputs[i]
     # return w
 
+
 def sigmoid(x, derivative=False):
-    if(derivative == True):
+    if derivative == True:
         return x * (1 - x)
     return 1 / (1 + math.exp(-x))
+
 
 def guessY(x, w):
     m = w[1] / w[2]
     b = w[0] / w[2]
     return -m * x - b
+
+
+def feedForward(hiddenWeights, outputWeights, point):
+    hiddenOutputs = np.zeros()
+    outputOutput = 0
+    for i in range(len(self.hiddenWeights)):
+        hiddenOutputs = np.append(
+            hiddenOutputs,
+            train(
+                weights=hiddenWeights[i], 
+                inputs=points[i]
+            )
+        )
+    outputOutput = train(
+        weights=self.outputWeights, 
+        inputs=self.hiddenOutputs
+    )
+
+    return outputOutput

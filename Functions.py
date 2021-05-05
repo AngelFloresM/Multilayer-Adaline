@@ -62,17 +62,14 @@ def createWeights(neurons, hidden):
     return np.array(w)
 
 
-def train(weights, inputs):
-    y = sigmoid(np.dot(w.T, inputs))
-    return y
-    # sigmoid = sigmoid(y, True)
-    # error = outputs - y
+def guess(inputs, weights):
+    return sigmoidf(np.dot(weights.T, inputs))
     # for i in range(len(w)):
     #     w += sigmoid * lr  * error * inputs[i]
     # return w
 
 
-def sigmoid(x, derivative=False):
+def sigmoidf(x, derivative=False):
     if derivative == True:
         return x * (1 - x)
     return 1 / (1 + math.exp(-x))
@@ -84,20 +81,35 @@ def guessY(x, w):
     return -m * x - b
 
 
-def feedForward(hiddenWeights, outputWeights, point):
-    hiddenOutputs = np.zeros()
-    outputOutput = 0
-    for i in range(len(self.hiddenWeights)):
-        hiddenOutputs = np.append(
-            hiddenOutputs,
-            train(
-                weights=hiddenWeights[i], 
-                inputs=points[i]
-            )
-        )
-    outputOutput = train(
-        weights=self.outputWeights, 
-        inputs=self.hiddenOutputs
-    )
+def feedForward(hiddenWeights, outputWeights, hiddenY, point):
+    outputY = 0
+    for i in range(1, len(hiddenY)):
+        hiddenY[i] = guess(inputs=point, weights=hiddenWeights[i - 1])
+    outputY = guess(inputs=hiddenY, weights=outputWeights)
 
-    return outputOutput
+    return hiddenY, outputY
+
+
+def backPropagation(outputY, point, pointsY, hiddenY, hiddenWeights, outputWeights):
+    outputGradient = getLocalGradient(outputY, pointsY, True)
+    for i in range(len(outputWeights)):
+        outputWeights[i] += outputGradient * hiddenY[i]  # * lr
+    outputWeightsSum = sum(outputWeights)
+    for i in range(len(hiddenWeights)):
+        hiddenGradient = (
+            getLocalGradient(hiddenY[i]) * outputWeightsSum * outputGradient
+        )
+        for j in range(len(hiddenWeights[i])):
+            hiddenWeights[i][j] += hiddenGradient * point[j]
+
+    return hiddenWeights, outputWeights
+
+
+def getLocalGradient(y, pointY=0, outputLayer=False):
+    sigmoid = sigmoidf(y, True)
+    if outputLayer == True:
+        error = pointY - y
+        return sigmoid * error
+    return sigmoid
+
+    # pass

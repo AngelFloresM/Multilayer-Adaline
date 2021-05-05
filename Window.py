@@ -1,8 +1,12 @@
+import sys
 from tkinter import *
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 from matplotlib.figure import Figure
-from numpy.core.numeric import extend_all
+
+# sys.path.append('C:\Users\angel\OneDrive\Documentos\CUCEI\SSPAI2\P05')
+
 from Functions import *
 
 # funcion contorno
@@ -16,11 +20,11 @@ class Window:
 
         # Values Init
         self.points = []
-        self.pointsOutputs = []
+        self.pointsY = []
         self.hiddenWeights = np.zeros((0, 3))
-        self.hiddenOutputs = None
+        self.hiddenY = None
         self.outputWeights = np.zeros(0)
-        self.outputOutput = 0
+        self.outputY = 0
         self.epoch = 0
 
         # Entries
@@ -106,37 +110,72 @@ class Window:
 
     def start(self):
         neurons = int(self.entries[0].get())
-        totalEpochs = int(self.entries[1].get())
+        totalEpochs = self.entries[1].get()
 
         self.hiddenWeights = createWeights(neurons, True)
-        self.hiddenOutputs = np.zeros(neurons + 1)
+        self.hiddenY = np.zeros(neurons + 1)
         self.outputWeights = createWeights(neurons, False)
-        self.hiddenOutputs[0] = 1
+        self.hiddenY[0] = 1
 
         if self.entries[1].get() == "":
             self.epoch = 100
         else:
-            self.epoch = totalEpochs
+            self.epoch = int(totalEpochs)
         epoch = 0
 
-        while epoch <= 1:
+        x = np.linspace(self.graphLimits[0], self.graphLimits[1], 100)
+        y = np.linspace(self.graphLimits[0], self.graphLimits[1], 100)
+
+        xx, yy = np.meshgrid(x, y)
+
+        ones = np.ones(len(xx.ravel()))
+
+        inputs = np.array([ones, xx.ravel(), yy.ravel()]).T
+
+        outputs = np.zeros(len(inputs))
+
+        colors = ('red', 'blue')
+        cmap = ListedColormap(colors[:len(np.unique([0,1]))])
+
+        while epoch < self.epoch:
             self.window.update()
             self.epochLabel.config(text=epoch)
-            # self.configGraph()
+            self.configGraph()
 
             for i in range(len(self.points)):
-                self.outputOutput = feedForward(
-                    hiddenWeights=hiddenWeights[j], 
-                    outputWeights=outputWeights, 
-                    point=self.points[i]
+                self.hiddenY, self.outputY = feedForward(
+                    hiddenWeights=self.hiddenWeights,
+                    outputWeights=self.outputWeights,
+                    hiddenY=self.hiddenY,
+                    point=self.points[i],
                 )
 
-        #     self.canvas.draw()
-        #     epoch += 1
+                self.hiddenWeights, self.outputWeights = backPropagation(
+                    outputY=self.outputY,
+                    point=self.points[i],
+                    pointsY=self.pointsY[i],
+                    hiddenY=self.hiddenY,
+                    hiddenWeights=self.hiddenWeights,
+                    outputWeights=self.outputWeights,
+                )
+
+            for i in range(len(self.pointsY)):
+                outputs[i] = np.where(guess(inputs[i], self.outputWeights) >= 0, 1, 0)
+
+            self.graph.contourf(xx, yy, outputs.reshape(xx.shape), alpha= 0.4, cmap=cmap)
+
+            # print(self.hiddenWeights)
+            # print(self.outputWeights)
+            for i in range(len(self.points)):
+                self.plot(self.points[i][1],
+                          self.points[i][2], self.pointsY[i])
+
+            self.canvas.draw()
+            epoch += 1
 
     def clean(self):
         self.points = []
-        self.pointsOutputs = []
+        self.pointsY = []
         self.configGraph()
         self.graph.plot()
         self.canvas.draw()
@@ -153,7 +192,7 @@ class Window:
 
         inputs, outputs = load_from_file(example=example)
         self.points = np.array(inputs)
-        self.pointsOutputs = np.array(outputs)
+        self.pointsY = np.array(outputs)
 
         for i in range(len(inputs)):
             self.plot(inputs[i][1], inputs[i][2], outputs[i])

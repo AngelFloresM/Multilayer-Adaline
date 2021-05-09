@@ -8,6 +8,7 @@ from matplotlib.figure import Figure
 # sys.path.append('C:\Users\angel\OneDrive\Documentos\CUCEI\SSPAI2\P05')
 
 from Functions import *
+from Adaline import *
 
 # funcion contorno
 
@@ -18,14 +19,12 @@ class Window:
         self.window.title("Práctica 4")
         self.window.geometry("750x500")
 
+        self.colors = ("red", "blue")
+        self.cmap = ListedColormap(self.colors[: len(np.unique([0, 1]))])
+
         # Values Init
         self.points = []
         self.pointsY = []
-        self.hiddenWeights = np.zeros((0, 3))
-        self.hiddenY = None
-        self.outputWeights = np.zeros(0)
-        self.outputY = 0
-        self.epoch = 0
 
         # Entries
         self.entryLabels = ["Neurons: ", "Epochs: ", "Learning Rate: ", "Example: "]
@@ -43,7 +42,15 @@ class Window:
         self.figure = None
         self.graph = None
         self.canvas = None
-        self.graphLimits = [-2, 2]
+        self.limits = [-2, 2]
+
+        self.x = np.linspace(self.limits[0], self.limits[1], 50)
+        self.y = np.linspace(self.limits[0], self.limits[1], 50)
+        self.xx, self.yy = np.meshgrid(self.x, self.y)
+        self.inputs = np.array(
+            [np.ones(len(self.xx.ravel())), self.xx.ravel(), self.yy.ravel()]
+        ).T
+        self.outputs = np.zeros(len(self.inputs))
 
         self.startUI()
 
@@ -102,76 +109,77 @@ class Window:
         self.graph.cla()  # Clears graph
         self.graph.grid()  # Adds grid to graph
         # Sets graph limits
-        self.graph.set_xlim([self.graphLimits[0], self.graphLimits[1]])
-        self.graph.set_ylim([self.graphLimits[0], self.graphLimits[1]])
+        self.graph.set_xlim([self.limits[0], self.limits[1]])
+        self.graph.set_ylim([self.limits[0], self.limits[1]])
         # Draw origin lines
         self.graph.axhline(y=0, color="k")
         self.graph.axvline(x=0, color="k")
 
     def start(self):
         neurons = int(self.entries[0].get())
-        totalEpochs = self.entries[1].get()
-
-        self.hiddenWeights = createWeights(neurons, True)
-        self.hiddenY = np.zeros(neurons + 1)
-        self.outputWeights = createWeights(neurons, False)
-        self.hiddenY[0] = 1
-
-        if self.entries[1].get() == "":
-            self.epoch = 100
-        else:
-            self.epoch = int(totalEpochs)
+        totalEpochs = int(self.entries[1].get())
+        lr = float(self.entries[2].get())
         epoch = 0
+        hiddenLayer = np.array([])
 
-        x = np.linspace(self.graphLimits[0], self.graphLimits[1], 100)
-        y = np.linspace(self.graphLimits[0], self.graphLimits[1], 100)
+        outputLayer = Adaline(lr=lr, inputs=neurons + 1, outputLayer=True)
 
-        xx, yy = np.meshgrid(x, y)
+        for i in range(neurons):
+            hiddenLayer = np.append(hiddenLayer, Adaline(lr=lr))
 
-        ones = np.ones(len(xx.ravel()))
+        grid = np.zeros(neurons)
 
-        inputs = np.array([ones, xx.ravel(), yy.ravel()]).T
-
-        outputs = np.zeros(len(inputs))
-
-        colors = ('red', 'blue')
-        cmap = ListedColormap(colors[:len(np.unique([0,1]))])
-
-        while epoch < self.epoch:
+        while epoch <= totalEpochs:
             self.window.update()
             self.epochLabel.config(text=epoch)
             self.configGraph()
 
             for i in range(len(self.points)):
-                self.hiddenY, self.outputY = feedForward(
-                    hiddenWeights=self.hiddenWeights,
-                    outputWeights=self.outputWeights,
-                    hiddenY=self.hiddenY,
-                    point=self.points[i],
+                [layer.getOutput(self.points[i]) for layer in hiddenLayer]
+
+                outputLayer.getOutput(np.array([1] + [n.y for n in hiddenLayer]))
+                outputLayer.backPropagation(
+                    prevLayerY=[1] + [n.y for n in hiddenLayer], pointY=self.pointsY[i]
                 )
 
-                self.hiddenWeights, self.outputWeights = backPropagation(
-                    outputY=self.outputY,
-                    point=self.points[i],
-                    pointsY=self.pointsY[i],
-                    hiddenY=self.hiddenY,
-                    hiddenWeights=self.hiddenWeights,
-                    outputWeights=self.outputWeights,
+                [
+                    layer.backPropagation(
+                        prevLayerY=self.points[i], nextLayer=outputLayer
+                    )
+                    for layer in hiddenLayer
+                ]
+
+            for neuron in hiddenLayer:
+                self.graph.plot(
+                    [-2, 2], [guessY(-2, neuron.w), guessY(2, neuron.w)], c="slategrey"
                 )
 
-            for i in range(len(self.pointsY)):
-                outputs[i] = np.where(guess(inputs[i], self.outputWeights) >= 0, 1, 0)
-
-            self.graph.contourf(xx, yy, outputs.reshape(xx.shape), alpha= 0.4, cmap=cmap)
-
-            # print(self.hiddenWeights)
-            # print(self.outputWeights)
             for i in range(len(self.points)):
-                self.plot(self.points[i][1],
-                          self.points[i][2], self.pointsY[i])
+                self.graph.plot(
+                    self.points[i][1],
+                    self.points[i][2],
+                    marker="o",
+                    c=pointColor(self.pointsY[i]),
+                )
 
-            self.canvas.draw()
+            # self.canvas.draw()
             epoch += 1
+
+            for i in range(len(self.outputs)):
+                for j in range(neurons):
+                    grid[j] = np.where(hiddenLayer[j].guess(self.inputs[i]) >= 0.01, 1, 0)
+                # grid = grid.T
+            # self.outputs = [np.where(sum(g) != 3, 1, 0) for g in grid]
+                if((grid > 0).all() == False):
+                    self.outputs[i] = 0
+                else:
+                    self.outputs[i] = 1
+
+            self.graph.contourf(
+                self.xx, self.yy, self.outputs.reshape(self.xx.shape), cmap="magma"
+            )   
+
+            self.canvas.draw()  
 
     def clean(self):
         self.points = []
@@ -183,25 +191,22 @@ class Window:
         self.epochLabel.config(text="0")
 
     def load_example(self):
-        example = int(self.entries[3].get())
-
-        if example == 0 or example == "":
-            return
-
         self.clean()
+        example = int(self.entries[3].get())
 
         inputs, outputs = load_from_file(example=example)
         self.points = np.array(inputs)
         self.pointsY = np.array(outputs)
 
-        for i in range(len(inputs)):
-            self.plot(inputs[i][1], inputs[i][2], outputs[i])
+        for i in range(len(self.points)):
+            self.graph.plot(
+                self.points[i][1],
+                self.points[i][2],
+                marker="o",
+                c=pointColor(self.pointsY[i]),
+            )
 
         self.canvas.draw()
-
-    def plot(self, x, y, desire):
-        color = pointColor(desire)
-        self.graph.plot(x, y, marker="o", color=color)
 
 
 window = Tk()

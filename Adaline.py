@@ -1,5 +1,4 @@
 import numpy as np
-import math
 
 
 class Adaline:
@@ -14,12 +13,12 @@ class Adaline:
         self.localGradient = 0
 
     def guess(self, p):
-        return self.sigmoid(np.dot(self.w.T, p))
+        return self.sigmoid(np.dot(p, self.w))
 
     def sigmoid(self, x, derivative=False):
         if derivative == True:
             return x * (1 - x)
-        return 1 / (1 + math.exp(-x))
+        return 1 / (1 + np.exp(-x))
 
     def getOutput(self, p):
         self.y = self.guess(p)
@@ -27,14 +26,12 @@ class Adaline:
     def backPropagation(self, prevLayerY=None, nextLayer=None, pointY=None):
         if self.outputLayer == True:
             self.localGradient = self.localGradientFunc(pointY=pointY)
-            for i in range(self.inputs):
-                self.w[i] += self.localGradient * prevLayerY[i] * self.lr
         else:
             self.localGradient = self.localGradientFunc(
                 pointY=pointY, nextLayer=nextLayer
             )
-            for i in range(self.inputs):
-                self.w[i] += self.localGradient * prevLayerY[i] * self.lr
+        for i in range(self.inputs):
+            self.w[i] += self.localGradient * prevLayerY[i] * self.lr
 
     def localGradientFunc(self, pointY, nextLayer=None):
         sigmoid = self.sigmoid(self.y, True)

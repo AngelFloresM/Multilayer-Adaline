@@ -166,22 +166,22 @@ class Window:
             epoch += 1
 
             # for i in range(len(self.outputs)):
-            for j in range(neurons):
-                # print(np.where(hiddenLayer[j].guess(self.inputs) >= 0.01, 1, 0))
-                grid[j] = np.where(hiddenLayer[j].guess(self.inputs) >= 0.01, 1, 0)
+            # for j in range(neurons):
+            #     print(np.where(hiddenLayer[j].guess(self.inputs) >= 0.01, 1, 0))
+            #     grid[j] = np.where(hiddenLayer[j].guess(self.inputs) >= 0.01, 1, 0)
             # print(sum(g) for g in grid.T)
-            self.outputs = [np.where(sum(g) == neurons, 1, 0) for g in grid.T]
-            self.outputs = np.array(self.outputs)
+            # self.outputs = [np.where(sum(g) == neurons, 1, 0) for g in grid.T]
+            # self.outputs = np.array(self.outputs)
             # for i in range(len(self.outputs)):
             #     if (self.outputs[i] == 0): print("si")
             #     # if((grid > 0).all() == False):
-                #     self.outputs[i] = 0
-                # else:
-                #     self.outputs[i] = 1
+            #         self.outputs[i] = 0
+            #     else:
+            #         self.outputs[i] = 1
 
-            self.graph.contourf(
-                self.xx, self.yy, self.outputs.reshape(self.xx.shape), cmap="magma"
-            )   
+            # self.graph.contourf(
+            #     self.xx, self.yy, self.outputs.reshape(self.xx.shape), cmap="magma"
+            # )   
 
             self.canvas.draw()  
 

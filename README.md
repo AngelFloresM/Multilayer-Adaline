@@ -4,4 +4,4 @@ Multilayer Adaline application made in python, capable of separeting two differe
 
 ## Create Example Program
 
-This whole proyect has only 6 examples implemented already inside examples folder but you can run the *createExample.py* to create your own.
+This repo only provide you with 6 examples, which are inside examples folder, but you can run the *createExample.py* to create your own.

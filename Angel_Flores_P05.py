@@ -44,8 +44,8 @@ class Window:
         self.canvas = None
         self.limits = [-2, 2]
 
-        self.x = np.linspace(self.limits[0], self.limits[1], 100)
-        self.y = np.linspace(self.limits[0], self.limits[1], 100)
+        self.x = np.linspace(self.limits[0], self.limits[1], 50)
+        self.y = np.linspace(self.limits[0], self.limits[1], 50)
         self.xx, self.yy = np.meshgrid(self.x, self.y)
         self.inputs = np.array(
             [np.ones(len(self.xx.ravel())), self.xx.ravel(), self.yy.ravel()]
@@ -127,7 +127,7 @@ class Window:
         for i in range(neurons):
             hiddenLayer = np.append(hiddenLayer, Adaline(lr=lr))
 
-        grid = np.zeros((neurons,len(self.inputs)))
+        grid = np.zeros((neurons, len(self.inputs)))
 
         while epoch <= totalEpochs:
             self.window.update()
@@ -162,28 +162,21 @@ class Window:
                     c=pointColor(self.pointsY[i]),
                 )
 
-            # self.canvas.draw()
             epoch += 1
 
-            # for i in range(len(self.outputs)):
-            # for j in range(neurons):
-            #     print(np.where(hiddenLayer[j].guess(self.inputs) >= 0.01, 1, 0))
-            #     grid[j] = np.where(hiddenLayer[j].guess(self.inputs) >= 0.01, 1, 0)
-            # print(sum(g) for g in grid.T)
-            # self.outputs = [np.where(sum(g) == neurons, 1, 0) for g in grid.T]
-            # self.outputs = np.array(self.outputs)
-            # for i in range(len(self.outputs)):
-            #     if (self.outputs[i] == 0): print("si")
-            #     # if((grid > 0).all() == False):
-            #         self.outputs[i] = 0
-            #     else:
-            #         self.outputs[i] = 1
+            for j in range(neurons):
+                grid[j] = hiddenLayer[j].guess(self.inputs)
+            self.outputs = [
+                outputLayer.guess(np.concatenate((np.array([1]), [g]), axis=None))
+                for g in grid.T
+            ]
+            self.outputs = np.array(self.outputs)
 
-            # self.graph.contourf(
-            #     self.xx, self.yy, self.outputs.reshape(self.xx.shape), cmap="magma"
-            # )   
+            self.graph.contourf(
+                self.xx, self.yy, self.outputs.reshape(self.xx.shape), cmap="magma"
+            )
 
-            self.canvas.draw()  
+            self.canvas.draw()
 
     def clean(self):
         self.points = []

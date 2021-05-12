@@ -149,10 +149,10 @@ class Window:
                     for layer in hiddenLayer
                 ]
 
-            for neuron in hiddenLayer:
-                self.graph.plot(
-                    [-2, 2], [guessY(-2, neuron.w), guessY(2, neuron.w)], c="slategrey"
-                )
+            # for neuron in hiddenLayer:
+            #     self.graph.plot(
+            #         [-2, 2], [guessY(-2, neuron.w), guessY(2, neuron.w)], c="slategrey"
+            #     )
 
             for i in range(len(self.points)):
                 self.graph.plot(
@@ -173,7 +173,7 @@ class Window:
             self.outputs = np.array(self.outputs)
 
             self.graph.contourf(
-                self.xx, self.yy, self.outputs.reshape(self.xx.shape), cmap="magma"
+                self.xx, self.yy, self.outputs.reshape(self.xx.shape), cmap="PuBu"
             )
 
             self.canvas.draw()

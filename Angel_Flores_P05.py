@@ -23,8 +23,8 @@ class Window:
         self.cmap = ListedColormap(self.colors[: len(np.unique([0, 1]))])
 
         # Values Init
-        self.points = []
-        self.pointsY = []
+        self.points = np.zeros((0,3))
+        self.pointsY = np.zeros(0)
 
         # Entries
         self.entryLabels = ["Neurons: ", "Epochs: ", "Learning Rate: ", "Example: "]
@@ -105,6 +105,9 @@ class Window:
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.window)
         self.canvas.get_tk_widget().grid(row=0, column=2)
 
+        cid = self.figure.canvas.mpl_connect(
+            'button_press_event', self.onClick)
+
     def configGraph(self):
         self.graph.cla()  # Clears graph
         self.graph.grid()  # Adds grid to graph
@@ -179,8 +182,8 @@ class Window:
             self.canvas.draw()
 
     def clean(self):
-        self.points = []
-        self.pointsY = []
+        self.points = np.zeros((0,3))
+        self.pointsY = np.zeros(0)
         self.configGraph()
         self.graph.plot()
         self.canvas.draw()
@@ -205,6 +208,25 @@ class Window:
 
         self.canvas.draw()
 
+    def onClick(self, event: Event):
+        desire: int
+        if event.button == 1:
+            desire = 0
+        elif event.button == 3:
+            desire = 1
+
+        self.points = np.append(self.points, [[1, float(event.xdata), float(event.ydata)]], axis=0)
+        self.pointsY = np.append(self.pointsY, [desire])
+
+        self.graph.plot(
+                    event.xdata,
+                    event.ydata,
+                    marker="o",
+                    c=pointColor(desire),
+                )
+
+        # self.plot(float(event.xdata), float(event.ydata), desire)
+        self.canvas.draw()
 
 window = Tk()
 app = Window(window)
